@@ -1,6 +1,5 @@
-#  Sistema POS Multicobranzas
+#  Sistema POS Multicobranzas -- PROYECTO CON FINES DIDACTICOS --
 
--- PROYECTO CON FINES DIDACTICOS --
 Sistema web integral de cobranzas y punto de venta (POS) simulado para pagos de servicios básicos, créditos bancarios y compras comerciales. 
 
 ##  Tecnologías Utilizadas
