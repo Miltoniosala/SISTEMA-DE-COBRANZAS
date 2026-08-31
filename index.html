@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Sistema de Cobranzas</title>
+    <style>
+        :root {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --accent: #10b981;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 2rem 1rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .pos-container {
+            width: 100%;
+            max-width: 850px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        header h1 {
+            font-size: 1.6rem;
+            color: var(--primary);
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Selector de Servicios */
+        .service-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            background: #f8fafc;
+            border: 2px solid var(--border);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        /* Subtabs para Banco */
+        .sub-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .sub-btn {
+            flex: 1;
+            padding: 8px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .sub-btn.active {
+            background: #334155;
+            color: #fff;
+        }
+
+        /* Formularios */
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        input, select {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-action {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-action:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-pay {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .btn-pay:hover {
+            background: #059669;
+        }
+
+        /* Panel de Resultados */
+        .result-card {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .result-row strong {
+            color: var(--text-muted);
+        }
+
+        .highlight-amount {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--primary);
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        /* Lista de Cuotas / Selección múltiple */
+        .item-list {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        .item-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .status-msg {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-weight: 500;
+            display: none;
+        }
+        .status-success { background: #dcfce7; color: #166534; }
+        .status-error { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+
+<div class="pos-container">
+    <header>
+        <h1>Terminal POS Multicobranzas</h1>
+        <p>Sistema Unificado de Pagos de Servicios</p>
+    </header>
+
+    <!-- Pestañas de Servicios -->
+    <div class="service-tabs">
+        <button class="tab-btn active" onclick="switchService('ande')">ANDE</button>
+        <button class="tab-btn" onclick="switchService('banco')">Banco UNO</button>
+        <button class="tab-btn" onclick="switchService('tupi')">Tupi</button>
+    </div>
+
+    <!-- SECCIÓN ANDE -->
+    <div id="section-ande" class="service-section">
+        <div class="search-box">
+            <input type="number" id="ande-nis" placeholder="Ingrese NIS (Ej: 1024501)">
+            <button class="btn-action" onclick="consultarAnde()">Consultar</button>
+        </div>
+        <div id="ande-result" class="result-card"></div>
+    </div>
+
+    <!-- SECCIÓN BANCO UNO -->
+    <div id="section-banco" class="service-section hidden">
+        <div class="sub-tabs">
+            <button class="sub-btn active" onclick="switchBancoMode('prestamos')">Préstamos</button>
+            <button class="sub-btn" onclick="switchBancoMode('tarjetas')">Tarjetas de Crédito</button>
+        </div>
+
+        <div id="banco-prestamos-view">
+            <div class="search-box">
+                <input type="text" id="banco-cedula" placeholder="Ingrese Cédula (Ej: 3456789)">
+                <button class="btn-action" onclick="consultarPrestamos()">Consultar</button>
+            </div>
+            <div id="prestamos-result" class="result-card"></div>
+        </div>
+
+        <div id="banco-tarjetas-view" class="hidden">
+            <div class="search-box">
+                <input type="text" id="banco-tarjeta" placeholder="Número de Tarjeta (Ej: 4532-8901-2345-6789)">
+                <button class="btn-action" onclick="consultarTarjeta()">Consultar</button>
+            </div>
+            <div id="tarjetas-result" class="result-card"></div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN TUPI -->
+    <div id="section-tupi" class="service-section hidden">
+        <div class="search-box">
+            <input type="text" id="tupi-cedula" placeholder="Ingrese Cédula (Ej: 3456789)">
+            <button class="btn-action" onclick="consultarTupi()">Consultar</button>
+        </div>
+        <div id="tupi-result" class="result-card"></div>
+    </div>
+
+    <!-- Mensaje de Estado Global -->
+    <div id="status-box" class="status-msg"></div>
+</div>
+
+<script>
+    const API_URL = 'http://127.0.0.1:5000/api';
+
+    function formatGs(monto) {
+        return new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG', maximumFractionDigits: 0 }).format(monto);
+    }
+
+    function showStatus(msg, isSuccess = true) {
+        const box = document.getElementById('status-box');
+        box.textContent = msg;
+        box.className = `status-msg ${isSuccess ? 'status-success' : 'status-error'}`;
+        box.style.display = 'block';
+        setTimeout(() => { box.style.display = 'none'; }, 4000);
+    }
+
+    // --- Navegación entre Pestañas ---
+    function switchService(service) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        document.querySelectorAll('.service-section').forEach(sec => sec.classList.add('hidden'));
+        document.getElementById(`section-${service}`).classList.remove('hidden');
+    }
+
+    function switchBancoMode(mode) {
+        document.querySelectorAll('.sub-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        if (mode === 'prestamos') {
+            document.getElementById('banco-prestamos-view').classList.remove('hidden');
+            document.getElementById('banco-tarjetas-view').classList.add('hidden');
+        } else {
+            document.getElementById('banco-prestamos-view').classList.add('hidden');
+            document.getElementById('banco-tarjetas-view').classList.remove('hidden');
+        }
+    }
+
+    // --- ANDE ---
+    async function consultarAnde() {
+        const nis = document.getElementById('ande-nis').value.trim();
+        const resDiv = document.getElementById('ande-result');
+        if (!nis) return;
+
+        try {
+            const res = await fetch(`${API_URL}/ande/${nis}`);
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.error);
+
+            resDiv.innerHTML = `
+                <div class="result-row"><strong>Titular:</strong> <span>${data.nombre_cliente}</span></div>
+                <div class="result-row"><strong>NIS:</strong> <span>${data.nis}</span></div>
+                <div class="result-row"><strong>Vencimiento:</strong> <span>${data.fecha_vencimiento}</span></div>
+                <div class="result-row"><strong>Estado:</strong> <span>${data.estado_pago}</span></div>
+                <div class="highlight-amount">${formatGs(data.monto_total)}</div>
+                ${data.estado_pago === 'Pendiente' 
+                    ? `<button class="btn-pay" onclick="pagarAnde(${data.nis})">Confirmar Pago</button>` 
+                    : '<p style="color: #166534; text-align: center; margin-top: 10px; font-weight: bold;">Factura al día</p>'}
+            `;
+            resDiv.style.display = 'block';
+        } catch (err) {
+            showStatus(err.message, false);
+            resDiv.style.display = 'none';
+        }
+    }
+
+    async function pagarAnde(nis) {
+        try {
+            const res = await fetch(`${API_URL}/ande/pagar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nis: nis, metodo_pago: 'Efectivo POS' })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            showStatus(data.mensaje, true);
+            consultarAnde();
+        } catch (err) {
+            showStatus(err.message, false);
+        }
+    }
+
+    // --- BANCO UNO: PRÉSTAMOS ---
+    let prestamosData = [];
+    async function consultarPrestamos() {
+        const ci = document.getElementById('banco-cedula').value.trim();
+        const resDiv = document.getElementById('prestamos-result');
+        if (!ci) return;
+
+        try {
+            const res = await fetch(`${API_URL}/banco/prestamos/${ci}`);
+            prestamosData = await res.json();
+            if (!res.ok) throw new Error(prestamosData.error);
+
+            let html = `<p><strong>Cliente:</strong> ${prestamosData[0].nombre_cliente}</p>
+                        <p><strong>Nº Préstamo:</strong> ${prestamosData[0].num_prestamo}</p>
+                        <div class="item-list">`;
+
+            prestamosData.forEach(c => {
+                html += `
+                    <div class="item-card">
+                        <div>
+                            <input type="checkbox" class="cuota-check" value="${c.id_cuota}" onchange="actualizarTotalPrestamos()">
+                            <strong> Cuota ${c.num_cuota}/${c.total_cuotas}</strong> (Vto: ${c.fecha_vencimiento})
+                            <div style="font-size:0.8rem; color:#64748b;">
+                                Cap: ${formatGs(c.monto_capital)} | Int: ${formatGs(c.monto_interes)}
+                            </div>
+                        </div>
+                        <div style="font-weight:bold;">${formatGs(c.monto_total_cuota)}</div>
+                    </div>
+                `;
+            });
+
+            html += `</div>
+                     <div class="highlight-amount" id="total-prestamo-pagar">${formatGs(0)}</div>
+                     <button class="btn-pay" onclick="pagarPrestamoSeleccion()">Pagar Cuota(s) Seleccionada(s)</button>`;
+            
+            resDiv.innerHTML = html;
+            resDiv.style.display = 'block';
+        } catch (err) {
+            showStatus(err.message, false);
+            resDiv.style.display = 'none';
+        }
+    }
+
+    function actualizarTotalPrestamos() {
+        let total = 0;
+        document.querySelectorAll('.cuota-check:checked').forEach(chk => {
+            const item = prestamosData.find(p => p.id_cuota == chk.value);
+            if (item) total += item.monto_total_cuota;
+        });
+        document.getElementById('total-prestamo-pagar').textContent = formatGs(total);
+    }
+
+    async function pagarPrestamoSeleccion() {
+        const seleccionadas = Array.from(document.querySelectorAll('.cuota-check:checked')).map(c => parseInt(c.value));
+        if (seleccionadas.length === 0) {
+            showStatus("Seleccione al menos una cuota.", false);
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_URL}/banco/prestamos/pagar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids_cuotas: seleccionadas, metodo_pago: 'Efectivo POS' })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            showStatus(data.mensaje, true);
+            consultarPrestamos();
+        } catch (err) {
+            showStatus(err.message, false);
+        }
+    }
+
+    // --- BANCO UNO: TARJETAS ---
+    async function consultarTarjeta() {
+        const nro = document.getElementById('banco-tarjeta').value.trim();
+        const resDiv = document.getElementById('tarjetas-result');
+        if (!nro) return;
+
+        try {
+            const res = await fetch(`${API_URL}/banco/tarjetas/${nro}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            resDiv.innerHTML = `
+                <div class="result-row"><strong>Titular:</strong> <span>${data.nombre_cliente}</span></div>
+                <div class="result-row"><strong>Tarjeta:</strong> <span>${data.tipo_tarjeta} (${data.num_tarjeta})</span></div>
+                <div class="result-row"><strong>Vencimiento de Extracto:</strong> <span>${data.fecha_vencimiento}</span></div>
+                <hr style="margin: 10px 0; border: none; border-top: 1px solid #e2e8f0;">
+                <div class="result-row"><strong>Pago Mínimo:</strong> <span>${formatGs(data.monto_minimo)}</span></div>
+                <div class="result-row"><strong>Deuda Total al Cierre:</strong> <span>${formatGs(data.monto_cierre)}</span></div>
+                
+                <div style="margin-top:15px;">
+                    <label><strong>Seleccione Modalidad de Pago:</strong></label>
+                    <select id="modalidad-tarjeta" style="width:100%; margin-top:5px;">
+                        <option value="minimo">Pago Mínimo (${formatGs(data.monto_minimo)})</option>
+                        <option value="total">Pago Total (${formatGs(data.monto_cierre)})</option>
+                    </select>
+                </div>
+                <button class="btn-pay" onclick="pagarTarjeta('${data.num_tarjeta}', ${data.monto_minimo}, ${data.monto_cierre})">Pagar Tarjeta</button>
+            `;
+            resDiv.style.display = 'block';
+        } catch (err) {
+            showStatus(err.message, false);
+            resDiv.style.display = 'none';
+        }
+    }
+
+    async function pagarTarjeta(tarjeta, min, tot) {
+        const modalidad = document.getElementById('modalidad-tarjeta').value;
+        const monto = modalidad === 'minimo' ? min : tot;
+
+        try {
+            const res = await fetch(`${API_URL}/banco/tarjetas/pagar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ num_tarjeta: tarjeta, monto: monto, tipo_pago: modalidad })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            showStatus(data.mensaje, true);
+        } catch (err) {
+            showStatus(err.message, false);
+        }
+    }
+
+    // --- TUPI ---
+    async function consultarTupi() {
+        const ci = document.getElementById('tupi-cedula').value.trim();
+        const resDiv = document.getElementById('tupi-result');
+        if (!ci) return;
+
+        try {
+            const res = await fetch(`${API_URL}/tupi/${ci}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            let html = `<p><strong>Cliente:</strong> ${data[0].nombre_cliente}</p>
+                        <p style="margin-bottom:10px; color:#64748b;">Seleccione el artículo y cuota que desea pagar:</p>
+                        <div class="item-list">`;
+
+            data.forEach(item => {
+                html += `
+                    <div class="item-card">
+                        <div>
+                            <strong>${item.descripcion_articulo}</strong>
+                            <div style="font-size:0.85rem; color:#64748b;">
+                                Cuota: ${item.num_cuota}/${item.total_cuotas} | Vto: ${item.fecha_vencimiento}
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:bold; margin-bottom:5px;">${formatGs(item.monto_cuota)}</div>
+                            <button class="btn-action" style="padding:6px 12px; font-size:0.85rem;" onclick="pagarTupi(${item.id_cuota})">Pagar</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            resDiv.innerHTML = html;
+            resDiv.style.display = 'block';
+        } catch (err) {
+            showStatus(err.message, false);
+            resDiv.style.display = 'none';
+        }
+    }
+
+    async function pagarTupi(idCuota) {
+        try {
+            const res = await fetch(`${API_URL}/tupi/pagar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_cuota: idCuota })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            showStatus(data.mensaje, true);
+            consultarTupi();
+        } catch (err) {
+            showStatus(err.message, false);
+        }
+    }
+</script>
+</body>
+</html>
